@@ -47,7 +47,7 @@ Tracked files in this repo:
 ```bash
 mkdir -p ~/carla && cd ~/carla
 wget https://tiny.carla.org/carla-0-9-16-linux
-tar -xzvf carla-0-9-16-linux
+tar -xvzf carla-0-9-16-linux
 ./CarlaUE4.sh
 ```
 
