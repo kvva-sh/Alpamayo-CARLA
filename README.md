@@ -1,14 +1,16 @@
 <div align="center">
 
-# 🏔️ Alpamayo 1
+# CarlaMayo
 
-### Bridging Reasoning and Action Prediction for Generalizable Autonomous Driving
+### Nvidia Alpamayo-R1 + CARLA Simulator
 
 [![HuggingFace](https://img.shields.io/badge/🤗%20Model-Alpamayo--R1--10B-blue)](https://huggingface.co/nvidia/Alpamayo-R1-10B)
 [![arXiv](https://img.shields.io/badge/arXiv-2511.00088-b31b1b.svg)](https://arxiv.org/abs/2511.00088)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](./LICENSE)
 
 </div>
+
+![Closed-loop Demo](assets/carla_alpamayo_demo.gif)
 
 _Note: Following the release of [NVIDIA Alpamayo](https://nvidianews.nvidia.com/news/alpamayo-autonomous-vehicle-development) at CES 2026, Alpamayo-R1 has been renamed to Alpamayo 1._
 
@@ -19,22 +21,61 @@ _Note: Following the release of [NVIDIA Alpamayo](https://nvidianews.nvidia.com/
 
 | Requirement | Specification |
 |-------------|---------------|
-| **Python** | 3.12.x (see `pyproject.toml`) |
-| **GPU** | NVIDIA GPU with ≥24 GB VRAM (e.g., RTX 3090, RTX 4090, A5000, H100) |
+| **Python** | 3.12.x (see `pyproject.toml`), 3.10.x (for CARLA) |
+| **GPU** | NVIDIA GPU with ≥24 GB VRAM for Alpamayo,  ≥6GB VRAM for CARLA|
 | **OS** | Linux (tested); other platforms unverified |
 
 > ⚠️ **Note**: GPUs with less than 24 GB VRAM will likely encounter CUDA out-of-memory errors.
+> Demo) 4-bit Quantization Model requires 12GB VRAM.
+
+## Repository Scope
+
+Tracked files in this repo:
+- `data_collect.py`
+- `alpamayo_carla_open_loop.py`
+- `carla_alpamayo_closed_loop.py`
+- `requirements-carla.txt`
+- `requirements-alpamayo.txt`
+- `README.md`
 
 ## Installation
 
-### 1. Install uv (if not already installed)
+## 1) CARLA Environment Setup (Data Collection for Open-loop test)
+
+### 1-1. Install and run CARLA 0.9.16 (Quick Install)
+
+```bash
+mkdir -p ~/carla && cd ~/carla
+wget https://github.com/carla-simulator/carla/releases/download/0.9.16/CARLA_0.9.16.tar.gz
+tar -xzf CARLA_0.9.16.tar.gz
+cd CARLA_0.9.16
+./CarlaUE4.sh
+```
+
+### 1-2. Create CARLA Python environment
+
+```bash
+python3.10 -m venv venv-carla
+source venv-carla/bin/activate
+pip install -r requirements-carla.txt
+```
+
+Install the CARLA Python API matching your CARLA server version:
+
+```bash
+pip install carla==0.9.16
+```
+
+## 2) Alpamayo Environment Setup
+
+### 2-1. Install uv (if not already installed)
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-### 2. Set up the environment
+### 2-2. Set up the environment
 
 ```bash
 uv venv ar1_venv
@@ -42,7 +83,7 @@ source ar1_venv/bin/activate
 uv sync --active
 ```
 
-### 3. Authenticate with HuggingFace
+### 2-3. Authenticate with HuggingFace
 
 The model requires access to gated resources. Request access here:
 - 🤗 [Physical AI AV Dataset](https://huggingface.co/datasets/nvidia/PhysicalAI-Autonomous-Vehicles)
@@ -62,9 +103,87 @@ Get your access token at: https://huggingface.co/settings/tokens
 
 > 💡 **Tip**: For more details on HuggingFace authentication, see the [official documentation](https://huggingface.co/docs/huggingface_hub/guides/cli).
 
+## 3) CarlaMayo Environment Setup
+
+### 2-3. Closed-loop environment (Alpamayo + CARLA in one env)
+
+```bash
+cd ~/alpamayo
+uv venv ar1_carla_venv
+source ar1_carla_venv/bin/activate
+uv sync --active
+python -m ensurepip --upgrade
+python -m pip install carla==0.9.16
+python -m pip install -r ../requirements-alpamayo.txt -r ../requirements-carla.txt
+```
+
+If `agents.navigation.controller` is not found, set:
+
+```bash
+export CARLA_ROOT=/path/to/CARLA_0.9.16
+```
+
 ## Running Inference
 
-### Test script
+## 4) Open-Loop Inference
+
+
+Run Data collection:
+
+```bash
+source venv-carla/bin/activate
+python data_collect.py
+```
+
+Outputs:
+- `carla_data/trajectory.json`
+- `carla_data/cam_*/<frame>.jpg`
+- `carla_data/lidar_top/<frame>.ply`
+
+Run Open-loop Test:
+
+```bash
+source alpamayo/ar1_venv/bin/activate
+# Default: full-precision model (requires high VRAM)
+python alpamayo_carla_open_loop.py
+
+# Optional: quantized 4-bit mode
+python alpamayo_carla_open_loop.py --quantization
+```
+
+Output:
+- `carla_alpamayo_open_loop_result.mp4`
+
+## 4) Closed-Loop Inference
+
+Before running, set your local CARLA PythonAPI path in `carla_alpamayo_closed_loop.py`:
+
+```python
+# User Config (top of file)
+CARLA_AGENT_ROOT = "carla/CARLA_0.9.16"
+```
+
+Use the path that contains `PythonAPI/carla` on your machine.
+
+Run (default, no extra options):
+
+```bash
+source alpamayo/ar1_carla_venv/bin/activate
+python carla_alpamayo_closed_loop.py
+```
+
+Additional options:
+
+```bash
+# Quantized model
+python carla_alpamayo_closed_loop.py --quantization
+
+```
+
+Output:
+- `carla_alpamayo_closed_loop_result.mp4`
+
+### Nvidia's Original Test script
 
 NOTE: This script will download both some example data (relatively small) and the model weights (22 GB).
 The latter can be particularly slow depending on network bandwidth.
@@ -76,10 +195,6 @@ python src/alpamayo_r1/test_inference.py
 
 In case you would like to obtain more trajectories and reasoning traces, please feel free to change
 the `num_traj_samples=1` argument to a higher number (Line 60).
-
-### Interactive notebook
-
-We provide a notebook with similar inference code at `notebook/inference.ipynb`.
 
 ## Relationship with the Paper
 
@@ -137,26 +252,30 @@ No. The model weights are released under a **non-commercial license**. This rele
 ## Project Structure
 
 ```
-alpamayo/
-├── notebook/
-│   └── inference.ipynb                  # Example notebook
-├── src/
-│   └── alpamayo_r1/
-│       ├── action_space/
-│       │   └── ...                      # Action space definitions
-│       ├── diffusion/
-│       │   └── ...                      # Diffusion model components
-│       ├── geometry/
-│       │   └── ...                      # Geometry utilities and modules
-│       ├── models/
-│       │   ├── ...                      # Model components and utils functions
-│       ├── __init__.py                  # Package marker
-│       ├── config.py                    # Model and experiment configuration
-│       ├── helper.py                    # Utility functions
-│       ├── load_physical_aiavdataset.py # Dataset loader
-│       ├── test_inference.py            # Inference test script
-├── pyproject.toml                       # Project dependencies
-└── uv.lock                              # Locked dependency versions
+~/carla/
+├── Agents/
+├── PythonAPI/
+...
+└── CarlaUE4.sh
+
+~/<repo-root>/
+├── data_collect.py
+├── alpamayo_carla_open_loop.py
+├── carla_alpamayo_closed_loop.py
+├── module/
+│   ├── config.py
+│   ├── pid_controller.py
+│   ├── visualization.py
+│   ├── carla_interface.py
+│   └── inference.py
+├── requirements-carla.txt
+├── requirements-alpamayo.txt
+├── README.md
+├── carla_data/                 # generated by data_collect.py
+├── venv-carla/                 # CARLA env
+└── alpamayo/                   # cloned by Nvidia Alpamayo-R1 github
+    └── ar1_venv/               # Alpamayo env (created by uv)
+    └── ar1_carla_venv/         # Alpamayo + CARLA env
 ```
 
 ## Troubleshooting
@@ -173,9 +292,11 @@ config.attn_implementation = "sdpa"
 ### CUDA out-of-memory errors
 
 If you encounter OOM errors:
-1. Ensure you have a GPU with at least 24 GB VRAM
-2. Reduce `num_traj_samples` if generating multiple trajectories
-3. Close other GPU-intensive applications
+1. Try Quantization option
+2. Ensure you have a GPU with at least 12 GB VRAM
+3. Reduce `num_traj_samples` if generating multiple trajectories
+4. Close other GPU-intensive applications
+
 
 ## License
 
@@ -194,8 +315,6 @@ Important notes:
 By using this model, you acknowledge that it is a research tool intended to support scientific inquiry, benchmarking, and exploration—not a substitute for a certified AV stack. The developers and contributors disclaim any responsibility or liability for the use of the model or its outputs.
 
 ## Citation
-
-If you use Alpamayo 1 in your research, please cite:
 
 ```bibtex
 @article{nvidia2025alpamayo,
