@@ -165,7 +165,7 @@ CARLA_AGENT_ROOT = "carla/CARLA_0.9.16"
 
 Use the path that contains `PythonAPI/carla` on your machine.
 
-Run (default, no extra options):
+Run:
 
 ```bash
 cd ~/carla
