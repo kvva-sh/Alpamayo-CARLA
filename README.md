@@ -32,7 +32,7 @@ _Note: Following the release of [NVIDIA Alpamayo](https://nvidianews.nvidia.com/
 
 Tracked files in this repo:
 - `data_collect.py`
-- `alpamayo_carla_open_loop.py`
+- `carla_alpamayo_open_loop.py`
 - `carla_alpamayo_closed_loop.py`
 - `requirements-carla.txt`
 - `requirements-alpamayo.txt`
@@ -46,9 +46,8 @@ Tracked files in this repo:
 
 ```bash
 mkdir -p ~/carla && cd ~/carla
-wget https://github.com/carla-simulator/carla/releases/download/0.9.16/CARLA_0.9.16.tar.gz
-tar -xzf CARLA_0.9.16.tar.gz
-cd CARLA_0.9.16
+wget https://tiny.carla.org/carla-0-9-16-linux
+tar -xzvf carla-0-9-16-linux
 ./CarlaUE4.sh
 ```
 
@@ -108,7 +107,7 @@ Get your access token at: https://huggingface.co/settings/tokens
 ### 2-3. Closed-loop environment (Alpamayo + CARLA in one env)
 
 ```bash
-cd ~/alpamayo
+cd ~/carlamayo
 uv venv ar1_carla_venv
 source ar1_carla_venv/bin/activate
 uv sync --active
@@ -131,6 +130,7 @@ export CARLA_ROOT=/path/to/CARLA_0.9.16
 Run Data collection:
 
 ```bash
+cd ~/carlamayo
 source venv-carla/bin/activate
 python data_collect.py
 ```
@@ -143,12 +143,12 @@ Outputs:
 Run Open-loop Test:
 
 ```bash
-source alpamayo/ar1_venv/bin/activate
-# Default: full-precision model (requires high VRAM)
-python alpamayo_carla_open_loop.py
+cd ~/carlamayo
+source ar1_venv/bin/activate
+python carla_alpamayo_open_loop.py
 
 # Optional: quantized 4-bit mode
-python alpamayo_carla_open_loop.py --quantization
+python carla_alpamayo_open_loop.py --quantization
 ```
 
 Output:
@@ -159,7 +159,7 @@ Output:
 Before running, set your local CARLA PythonAPI path in `carla_alpamayo_closed_loop.py`:
 
 ```python
-# User Config (top of file)
+# User Config (top of module/config.py)
 CARLA_AGENT_ROOT = "carla/CARLA_0.9.16"
 ```
 
@@ -168,16 +168,15 @@ Use the path that contains `PythonAPI/carla` on your machine.
 Run (default, no extra options):
 
 ```bash
+cd ~/carla
+/.CarlaUe4.sh
+
+cd ~/carlamayo
 source alpamayo/ar1_carla_venv/bin/activate
 python carla_alpamayo_closed_loop.py
-```
 
-Additional options:
-
-```bash
-# Quantized model
+# Optional: quantized 4-bit mode
 python carla_alpamayo_closed_loop.py --quantization
-
 ```
 
 Output:
@@ -260,7 +259,7 @@ No. The model weights are released under a **non-commercial license**. This rele
 
 ~/<repo-root>/
 ├── data_collect.py
-├── alpamayo_carla_open_loop.py
+├── carla_alpamayo_open_loop.py
 ├── carla_alpamayo_closed_loop.py
 ├── module/
 │   ├── config.py
