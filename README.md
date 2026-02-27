@@ -156,7 +156,7 @@ Output:
 
 ## 4) Closed-Loop Inference
 
-Before running, set your local CARLA PythonAPI path in `carla_alpamayo_closed_loop.py`:
+Before running, set your local CARLA PythonAPI path in `module/config.py`:
 
 ```python
 # User Config (top of module/config.py)
@@ -195,58 +195,6 @@ python src/alpamayo_r1/test_inference.py
 In case you would like to obtain more trajectories and reasoning traces, please feel free to change
 the `num_traj_samples=1` argument to a higher number (Line 60).
 
-## Relationship with the Paper
-
-Alpamayo 1 implements the architecture described in our paper [*"Alpamayo-R1: Bridging Reasoning and Action Prediction for Generalizable Autonomous Driving in the Long Tail
-"*](https://arxiv.org/abs/2511.00088), including:
-
-| Feature | Paper Description | This Release (v1.0) |
-|---------|-------------------|---------------------|
-| **Chain-of-Causation (CoC) reasoning** | Hybrid auto-labeling with human in the loop for reasoning traces | ✅ Included |
-| **Vision-Language-Action architecture** | Cosmos-Reason backbone + action expert | ✅ Included |
-| **Trajectory prediction** | 6.4s horizon, 64 waypoints at 10 Hz | ✅ Included |
-| **RL post-training** | Reinforcement learning for reasoning/action consistency | ❌ Not in this release |
-| **Route/navigation conditioning** | Explicit navigation or route inputs | ❌ Not in this release |
-| **Meta-actions/General VQA** | High-level behavior and visual question answering | ❌ Not in this release |
-
-The current release focuses on the core supervised learning components. RL post-training and route conditioning are potential candidates for future releases. Stay tuned!
-
-## Frequently Asked Questions (FAQ)
-
-<details>
-<summary><strong>Does the 10B model accept navigation/route inputs?</strong></summary>
-
-While we have experimented with route conditioning capabilities, the released model does **not** include this feature. The current release takes multi-camera video and egomotion history as inputs, without explicit navigation or route inputs (e.g., waypoints, turn-by-turn navigation instructions).
-
-</details>
-
-<details>
-<summary><strong>Does the model produce meta-actions or support general VQA?</strong></summary>
-
-While we have experimented with meta-action and general VQA capabilities, the released model does **not** include these features. Alpamayo 1 is designed specifically for trajectory prediction with Chain-of-Causation reasoning, producing trajectory + reasoning trace outputs.
-
-</details>
-
-<details>
-<summary><strong>Was the 10B model post-trained with Reinforcement Learning (RL)?</strong></summary>
-
-No. The current 10B model release has **not** undergone RL post-training. While the paper describes RL stages for improving reasoning quality and action consistency, this release focuses on the supervised learning components. As mentioned above, we may release RL post-trained models in future releases.
-
-</details>
-
-<details>
-<summary><strong>What are the minimum GPU requirements?</strong></summary>
-
-You need an NVIDIA GPU with at least **24 GB VRAM** for inference. Tested configurations include RTX 3090, A100, and H100. Running on GPUs with less memory (e.g., 16 GB) will likely result in CUDA out-of-memory errors.
-
-</details>
-
-<details>
-<summary><strong>Can I use this model in production / commercial applications?</strong></summary>
-
-No. The model weights are released under a **non-commercial license**. This release is intended for research, experimentation, and evaluation purposes only. See the [License](#license) section and the [HuggingFace Model Card](https://huggingface.co/nvidia/Alpamayo-R1-10B) for details.
-
-</details>
 
 ## Project Structure
 
